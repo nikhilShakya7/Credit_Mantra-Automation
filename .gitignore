@@ -1,8 +1,13 @@
-
-# Playwright
 node_modules/
 /test-results/
 /playwright-report/
 /blob-report/
-/playwright/.cache/
-/playwright/.auth/
+playwright/.cache/
+playwright/.auth/
+example.spec.ts
+
+.env
+.env.local
+.auth/officer.json
+.auth/borrower.json
+.auth/developer.json

@@ -1,79 +1,109 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+const baseURL = process.env.BASE_URL;
+const onCI = !!process.env.CI;
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
 export default defineConfig({
-  testDir: './tests',
-  /* Run tests in files in parallel */
-  fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
-  use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
+  testDir: "./tests",
+  // Tests inside a file run sequentially (one worker per file). The app rate-limits
+  // everything under /auth/* per IP, so auth flows must not run concurrently.
+  fullyParallel: false,
+  forbidOnly: onCI,
+  retries: onCI ? 2 : 1,
+  workers: onCI ? 2 : 3,
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+  globalTimeout: onCI ? 30 * 60_000 : undefined,
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+  reporter: onCI
+    ? [["github"], ["html", { open: "never" }], ["list"]]
+    : [["list"], ["html", { open: "never" }]],
+
+  use: {
+    baseURL,
+    actionTimeout: 15_000,
+    navigationTimeout: 20_000,
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    locale: "en-US",
+    timezoneId: "Asia/Kathmandu",
   },
 
-  /* Configure projects for major browsers */
   projects: [
+    // 1. Creates the reusable authenticated sessions (storageState) exactly once per run.
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "setup",
+      testMatch: "**/*.setup.ts",
+      timeout: 180_000,
     },
 
+    // 2. Anonymous / public pages - never carries a session cookie.
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: "guest",
+      dependencies: ["setup"],
+      testMatch: "**/guest/**/*.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
     },
 
+    // 3. Authentication flows (login/register/forgot password) - hit the /auth/* endpoints,
+    //    which are rate limited, so they get a longer timeout for cool-down retries.
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: "auth",
+      dependencies: ["setup"],
+      testMatch: "**/auth/**/*.spec.ts",
+      timeout: 180_000,
+      use: { ...devices["Desktop Chrome"] },
     },
 
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    // 4. Role: Borrower
+    {
+      name: "borrower",
+      dependencies: ["setup"],
+      testMatch: "**/borrower/**/*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: ".auth/borrower.json",
+      },
+    },
 
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    // 5. Role: Credit Officer / Underwriter
+    {
+      name: "officer",
+      dependencies: ["setup"],
+      testMatch: "**/officer/**/*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: ".auth/officer.json",
+      },
+    },
+
+    // 6. Role: Developer (owns the Credit Score API portal + API contract tests)
+    {
+      name: "developer",
+      dependencies: ["setup"],
+      testMatch: "**/developer/**/*.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: ".auth/developer.json",
+      },
+    },
+
+    // 7. Cross-role / deep-behavior tests (calculator edge cases, etc.) - anonymous session.
+    {
+      name: "integration",
+      dependencies: ["setup"],
+      testMatch: "**/integration/**/*.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+
+    // Optional cross-browser smoke run: npx playwright test --project=mobile-chromium
+    {
+      name: "mobile-chromium",
+      dependencies: ["setup"],
+      testMatch: "**/guest/**/*.spec.ts",
+      use: { ...devices["Pixel 7"] },
+    },
   ],
-
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });

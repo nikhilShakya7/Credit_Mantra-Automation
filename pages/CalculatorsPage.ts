@@ -24,11 +24,28 @@ export class CalculatorsPage extends BasePage {
   readonly dtiRiskDesc = this.page.locator('#dti-risk-desc');
 
   // TAX
+  readonly taxFy = this.page.locator('#tax-fy');
+  readonly taxStatus = this.page.locator('#tax-status');
+  readonly taxFemale = this.page.locator('#tax-female');
+  readonly taxSsfContrib = this.page.locator('#tax-ssf-contrib');
   readonly taxBasic = this.page.locator('#tax-basic');
   readonly taxMonths = this.page.locator('#tax-months');
+  readonly taxGrade = this.page.locator('#tax-grade');
+  readonly taxAllowances = this.page.locator('#tax-allowances');
+  readonly taxBonus = this.page.locator('#tax-bonus');
+  readonly taxOtherIncome = this.page.locator('#tax-other-income');
   readonly taxSsf = this.page.locator('#tax-ssf');
+  readonly taxEpf = this.page.locator('#tax-epf');
+  readonly taxCit = this.page.locator('#tax-cit');
+  readonly taxInsurance = this.page.locator('#tax-insurance');
+  readonly taxMedical = this.page.locator('#tax-medical');
   readonly taxSsfWarning = this.page.locator('#tax-ssf-warning');
   readonly taxOutput = this.page.locator('#tax-output-value');
+  readonly taxOutputMonthly = this.page.locator('#tax-output-monthly');
+  readonly taxEffectiveRate = this.page.locator('#tax-effective-rate');
+  readonly taxTakehome = this.page.locator('#tax-takehome');
+  readonly taxTotalDeduction = this.page.locator('#tax-total-deduction');
+  readonly taxRetireApplied = this.page.locator('#tax-retire-applied');
   readonly taxGrossDisplay = this.page.locator('#tax-gross-display');
 
   constructor(page: Page) {

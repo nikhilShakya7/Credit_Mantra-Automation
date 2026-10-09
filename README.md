@@ -7,9 +7,9 @@ Production-ready end-to-end suite covering every role, page, and API contract ob
 | **Framework**        | Playwright `^1.64.0` + TypeScript `^7.0.2`                           |
 | **Design**           | Page Object Model + role-scoped projects + shared fixtures/test-data |
 | **Test files** | 7 |
-| **Total test cases** | 42 (38 unique + 4 mobile re-runs) |
+| **Total test cases** | 48 (44 unique + 4 mobile re-runs) |
 | **Logins per run** | **0** when a valid saved session exists (at most 1 per role on a cold cache) |
-| **Last result** | ✅ 42 passed / 0 failed in 33s (`npx playwright test`) |
+| **Last result** | ✅ 48 passed / 0 failed (`npx playwright test`) |
 
 ---
 
@@ -45,7 +45,7 @@ Verified against the live application sidebar navigation (`/` → `.sidebar-nav 
 | 4 | `borrower` | `tests/borrower/borrower-flows.spec.ts` | `.auth/borrower.json` | 8 | Analyzer, SME, assistant, RBAC denials |
 | 5 | `officer` | `tests/officer/officer-flows.spec.ts` | `.auth/officer.json` | 4 | Underwriter, portfolio, RBAC denials |
 | 6 | `developer` | `tests/developer/api-portal.spec.ts` | `.auth/developer.json` | 9 | API portal + REST API contract |
-| 7 | `integration` | `tests/integration/calculators.spec.ts` | anonymous | 3 | Calculator boundary/edge-case behavior |
+| 7 | `integration` | `tests/integration/calculators.spec.ts` + `calculations.spec.ts` | anonymous | 9 | Calculator edge cases + calculation correctness |
 | 8 | `mobile-chromium` | `tests/guest/public-ui.spec.ts` | anonymous | 4 | Same guest suite on Pixel 7 (Pixel 7 viewport) |
 
 > **Login happens exactly once.** Every role project depends on `setup` and loads the saved cookie jar, so **no test ever performs a login**. `setup` itself first checks whether `.auth/<role>.json` still passes a protected-page probe and, if so, **skips the login entirely**. On a warm cache a full run performs **0 logins**; only an expired/absent session or `FORCE_LOGIN=1` triggers a single login for that role. This keeps the suite under the app's per-IP `/auth/*` throttle (see §8).
@@ -147,15 +147,32 @@ Anonymous session; these assert the JS behaviour behind the calculators rather t
 
 | ID     | Test                                                | Input → Expected output                                                                                                                                                                                                                                                                                                                                                                               |
 | ------ | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| INT-01 | DTI calculator bands (boundary/edge cases)          | income `0` → output `N/A`/`0`, badge **Income Required**<br>income `10000` blur → field clamps/persists to `10000`<br>income `80000` + debt `12000` → `15.0%` → **Excellent / Low Debt**<br>income `80000` + debt `28800` → `36.0%` → **Moderate Debt Ratio**<br>income `80000` + debt `40000` → `50.0%` → **High Debt Burden**<br>income `80000` + debt `60000` → `75.0%` → **Critical Debt Levels** |
+| INT-01 | DTI calculator bands (boundary/edge cases)          | defaults: income `80000` + debt `24000` → `30.0%` → **Moderate Debt Ratio**<br>income `0` + blur → field clamps **up** to `10000` and a percentage is still produced<br>income `10000` + blur → stays `10000`<br>income `80000` + debt `12000` → `15.0%` → **Excellent / Low Debt**<br>income `80000` + debt `28800` → `36.0%` → **Moderate Debt Ratio**<br>income `80000` + debt `40000` → `50.0%` → **High Debt Burden**<br>income `80000` + debt `60000` → `75.0%` → **Critical Debt Levels** |
 | INT-02 | EMI input clamping on blur                          | principal `10000` + blur → `25000` (min clamp)<br>principal `999999999` + blur → `25000000` (max clamp)                                                                                                                                                                                                                                                                                               |
 | INT-03 | TAX: months clamp to 12, SSF warning + capped value | months `15` + blur → `12`<br>SSF `600000` → `#tax-ssf-warning` visible and contains `Exceeds max limit of NPR 500,000 (capped at NPR 500,000)` → `#tax-output-value` contains `NPR`                                                                                                                                                                                                                   |
 
-> Note: the risk badge is rendered in uppercase by CSS (`EXCELLENT / LOW DEBT`), so all badge assertions are case-insensitive (`toContainText`).
+> Note: risk badges are rendered in uppercase by CSS (`EXCELLENT / LOW DEBT`), so every badge assertion uses `toContainText(..., { ignoreCase: true })`.
 
 ---
 
-### 3.8 Mobile Chromium (`mobile-chromium`, 4 cases)
+### 3.8 Integration — Calculation Correctness (`calculations.spec.ts`, 6 cases)
+
+These recompute every figure from the published formula (in `utils/finance.ts`) and compare it to what the UI renders, so a **wrong number fails even when the format is correct**.
+
+| ID     | Test | Formula / Expected |
+| ------ | ---- | ------------------ |
+| CALC-01 | EMI outputs equal the reducing-balance formula | For principal ∈ {1,000,000 · 2,500,000 · 4,500,000 · 25,000,000}, rate ∈ {12% · 9.5% · 18.75% · 24%}, tenure ∈ {5y · 10y · 2.5y · 30y}: `EMI = P·r·(1+r)^n / ((1+r)^n − 1)` where `r = rate/12/100`, `n = round(years·12)`; asserts `#emi-output-value`, `#emi-total-interest` (`EMI·n − P`) and `#emi-total-payment` (`EMI·n`), each rounded and comma-grouped |
+| CALC-02 | DTI percentage equals `debts / income × 100` | (200k,30k)→`15.0%` · (90k,27k)→`30.0%` · (45k,10k)→`22.2%` · (120k,60k)→`50.0%` · (80k,56k)→`70.0%`, each with the matching risk badge |
+| CALC-03 | Salary tax (single, no deductions) | basic 50k × 12 = 600k gross → 5L @1% + 1L @10% = **NPR 15,000**; monthly NPR 1,250; effective `2.50%`; take-home NPR 48,750 |
+| CALC-04 | Salary tax (married + retirement/insurance deductions) | basic 100k × 12 = 1.2M gross; SSF 200k (cap = min(gross/3, 5L)), insurance 30k, medical 15k → net assessable 955k → married slabs → **NPR 57,000**; asserts gross, retirement-applied, total-deduction, tax, monthly, effective% |
+| CALC-05 | Salary tax: SSF 1% waiver + female rebate | FY 2082/83 single, SSF-contributor → first slab 1% waived; female + single → 10% rebate on the total |
+| CALC-06 | Proposed FY 2083/84 slabs | Uniform slabs (top 29%); basic 200k × 12 → asserts gross + total tax |
+
+> `CALC-01/02` also cross-check `#emi-total-interest`, `#emi-total-payment`, `#tax-gross-display`, `#tax-retire-applied`, `#tax-total-deduction`, `#tax-output-monthly`, `#tax-effective-rate` and `#tax-takehome` — not just the hero number.
+
+---
+
+### 3.9 Mobile Chromium (`mobile-chromium`, 4 cases)
 
 Replays the entire guest suite (GUE-01 … GUE-04) on a **Pixel 7** device profile (mobile viewport + touch + mobile UA) to catch responsive-only breakage. Run explicitly:
 
@@ -223,11 +240,12 @@ credit-mantra automation/
 └── tests/
     ├── setup/auth.setup.ts       # 3 cases  → storageState
     ├── guest/public-ui.spec.ts   # 4 cases  → anonymous
-    ├── auth/auth-flows.spec.ts   # 9 cases  → anonymous
+    ├── auth/auth-flows.spec.ts   # 7 cases  → anonymous
     ├── borrower/borrower-flows.spec.ts  # 8 cases → .auth/borrower.json
     ├── officer/officer-flows.spec.ts    # 4 cases → .auth/officer.json
     ├── developer/api-portal.spec.ts     # 9 cases → .auth/developer.json
-    └── integration/calculators.spec.ts  # 3 cases → anonymous
+    ├── integration/calculators.spec.ts  # 3 cases → anonymous (edge cases)
+    └── integration/calculations.spec.ts # 6 cases → anonymous (math correctness)
 ```
 
 ---
@@ -341,6 +359,7 @@ npx playwright test --project=borrower
 npx playwright test --project=developer
 npx playwright test --project=mobile-chromium
 npx playwright test tests/integration/calculators.spec.ts
+npx playwright test tests/integration/calculations.spec.ts
 npx playwright test -g "Access Denied"
 ```
 
@@ -351,7 +370,7 @@ npx playwright test -g "Access Denied"
   [auth.setup] reusing saved officer session (no login)
   [auth.setup] reusing saved developer session (no login)
   ...
-  42 passed (≈ 30–60s with a warm session cache)
+  48 passed (≈ 30–60s with a warm session cache)
 ```
 
 On a cold cache the first run performs one login per role (~3 logins) and takes longer. `mobile-chromium` adds 4 more cases when selected.

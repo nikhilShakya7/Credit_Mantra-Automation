@@ -17,7 +17,7 @@ End-to-end, API contract, and role-based regression for https://credit-mantra.co
 - On a warm cache a full run performs **0 logins**; otherwise at most one login per role. Force with `FORCE_LOGIN=1`.
 - Role projects (`borrower`, `officer`, `developer`) load the saved `storageState`; no test logs in.
 
-## Test Inventory — 38 unique cases (+4 mobile re-runs = 42 total)
+## Test Inventory — 44 unique cases (+4 mobile re-runs = 48 total)
 
 ### Project: setup (3)
 1. borrower session → reuse or log in once → `.auth/borrower.json`
@@ -66,13 +66,19 @@ End-to-end, API contract, and role-based regression for https://credit-mantra.co
 34. GET /api/v1/score/ -> 405
 35. Developer denied underwriter/portfolio
 
-### Project: integration (3)
+### Project: integration (9)
 36. DTI bands + edge cases (defaults 30.0%, income 0 clamps to 10000, 15/36/50/75%)
 37. EMI input clamping on blur (10000->25000, large->25000000)
 38. TAX: months clamp 15->12, SSF over-limit warning, tax output present
+39. EMI outputs equal the reducing-balance formula (4 input sets)
+40. DTI percentage equals debts / income * 100 (5 input sets)
+41. Salary tax (single, no deductions) matches slab calculation
+42. Salary tax (married + retirement/insurance deductions) correct
+43. Salary tax: SSF 1% waiver + female rebate applied
+44. Proposed FY 2083/84 slabs applied (top rate 29%)
 
 ### Project: mobile-chromium (4)
-39–42. Cases 4–7 replayed on a Pixel 7 device profile.
+45–48. Cases 4–7 replayed on a Pixel 7 device profile.
 
 ## Design Notes
 - POM with role-based pages

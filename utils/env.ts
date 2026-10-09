@@ -15,7 +15,15 @@ function optional(name: string): string | undefined {
 }
 
 export const env = {
-  baseURL: process.env.BASE_URL ?? "https://credit-mantra.codepixelz.tech",
+  baseURL: (() => {
+    const value = process.env.BASE_URL?.trim();
+    if (!value) {
+      throw new Error(
+        'Missing environment variable "BASE_URL". Copy .env.example to .env and set the app URL before running Playwright tests.',
+      );
+    }
+    return value;
+  })(),
 
   borrower: {
     email: () => required("BORROWER_EMAIL"),

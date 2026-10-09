@@ -6,10 +6,10 @@ Production-ready end-to-end suite covering every role, page, and API contract ob
 | -------------------- | -------------------------------------------------------------------- |
 | **Framework**        | Playwright `^1.64.0` + TypeScript `^7.0.2`                           |
 | **Design**           | Page Object Model + role-scoped projects + shared fixtures/test-data |
-| **Test files** | 7 |
-| **Total test cases** | 48 (44 unique + 4 mobile re-runs) |
+| **Test files** | 12 |
+| **Total test cases** | 56 (50 unique + 6 mobile re-runs) |
 | **Logins per run** | **0** when a valid saved session exists (at most 1 per role on a cold cache) |
-| **Last result** | ✅ 48 passed / 0 failed (`npx playwright test`) |
+| **Last result** | ✅ 56 passed / 0 failed (`npx playwright test`) |
 
 ---
 
@@ -37,16 +37,16 @@ Verified against the live application sidebar navigation (`/` → `.sidebar-nav 
 
 ## 2. Coverage Summary
 
-| #   | Playwright Project | Spec file                               | Auth                   | Cases | Focus                                          |
-| --- | ------------------ | --------------------------------------- | ---------------------- | :---: | ---------------------------------------------- |
-| 1 | `setup` | `tests/setup/auth.setup.ts` | logins once (or reuses session) | 3 | Builds/reuses reusable `storageState` per role |
-| 2 | `guest` | `tests/guest/public-ui.spec.ts` | anonymous | 4 | Public UI, theme, calculators smoke |
-| 3 | `auth` | `tests/auth/auth-flows.spec.ts` | anonymous | 7 | Login, register, forgot password, route guards |
-| 4 | `borrower` | `tests/borrower/borrower-flows.spec.ts` | `.auth/borrower.json` | 8 | Analyzer, SME, assistant, RBAC denials |
-| 5 | `officer` | `tests/officer/officer-flows.spec.ts` | `.auth/officer.json` | 4 | Underwriter, portfolio, RBAC denials |
-| 6 | `developer` | `tests/developer/api-portal.spec.ts` | `.auth/developer.json` | 9 | API portal + REST API contract |
-| 7 | `integration` | `tests/integration/calculators.spec.ts` + `calculations.spec.ts` | anonymous | 9 | Calculator edge cases + calculation correctness |
-| 8 | `mobile-chromium` | `tests/guest/public-ui.spec.ts` | anonymous | 4 | Same guest suite on Pixel 7 (Pixel 7 viewport) |
+| #   | Playwright Project | Spec files | Auth | Cases | Focus |
+| --- | ------------------ | --------- | ---- | :---: | ----- |
+| 1 | `setup` | `tests/setup/auth.setup.ts` | one-time login / reuse | 3 | Reusable `storageState` per role |
+| 2 | `guest` | `tests/guest/navigation.spec.ts`, `tests/guest/public-ui.spec.ts` | anonymous | 6 | Navigation + public UI smoke |
+| 3 | `auth` | `tests/auth/auth-flows.spec.ts` | anonymous | 10 | Login, register, forgot password, route guards |
+| 4 | `borrower` | `tests/borrower/nav.spec.ts`, `tests/borrower/borrower-flows.spec.ts` | `.auth/borrower.json` | 10 | Borrower navigation + dashboard + uploads + RBAC |
+| 5 | `officer` | `tests/officer/nav.spec.ts`, `tests/officer/officer-flows.spec.ts` | `.auth/officer.json` | 5 | Officer nav + underwriter + portfolio |
+| 6 | `developer` | `tests/developer/nav.spec.ts`, `tests/developer/api-portal.spec.ts` | `.auth/developer.json` | 10 | Developer nav + API portal + REST contract |
+| 7 | `integration` | `tests/integration/calculations.spec.ts`, `tests/integration/calculators.spec.ts` | anonymous | 9 | Formula correctness + calculator edge cases |
+| 8 | `mobile-chromium` | `tests/guest/navigation.spec.ts`, `tests/guest/public-ui.spec.ts` | anonymous | 6 | Guest suite on Pixel 7 viewport |
 
 > **Login happens exactly once.** Every role project depends on `setup` and loads the saved cookie jar, so **no test ever performs a login**. `setup` itself first checks whether `.auth/<role>.json` still passes a protected-page probe and, if so, **skips the login entirely**. On a warm cache a full run performs **0 logins**; only an expired/absent session or `FORCE_LOGIN=1` triggers a single login for that role. This keeps the suite under the app's per-IP `/auth/*` throttle (see §8).
 

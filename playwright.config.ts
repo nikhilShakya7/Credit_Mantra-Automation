@@ -1,7 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";
 
-const baseURL = process.env.BASE_URL;
+const baseURL = process.env.BASE_URL?.trim();
+if (!baseURL) {
+  throw new Error(
+    'Missing environment variable "BASE_URL". Copy .env.example to .env and set the app URL before running Playwright tests.',
+  );
+}
 const onCI = !!process.env.CI;
 
 export default defineConfig({

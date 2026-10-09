@@ -44,12 +44,20 @@ Examples:
 
 This is the executable suite folder. The tests are grouped by user role and feature domain:
 
-- `guest/`: public page/tests
+- `guest/`: public page checks and navigation smoke tests
 - `auth/`: login/register/password-reset/redirect flows
-- `borrower/`: logged-in borrower scenarios
-- `developer/`: API contract and role restrictions
-- `integration/`: calculator logic validations
+- `borrower/`: logged-in borrower scenarios, dashboard flows, and borrower navigation checks
+- `officer/`: officer navigation and protected underwriter/portfolio checks
+- `developer/`: API contract and role restrictions, plus developer navigation checks
+- `integration/`: calculator logic validations and formula correctness checks
 - `setup/`: session creation for reuse
+
+The current suite includes dedicated navigation files such as:
+
+- `tests/guest/navigation.spec.ts`
+- `tests/borrower/nav.spec.ts`
+- `tests/officer/nav.spec.ts`
+- `tests/developer/nav.spec.ts`
 
 ### `utils/`
 

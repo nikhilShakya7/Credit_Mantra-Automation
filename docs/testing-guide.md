@@ -29,7 +29,7 @@ DEVELOPER_PASSWORD=your-password
 CREDIT_API_KEY=optional-api-key
 ```
 
-The project also supports defaulting `BASE_URL` to the production app if the environment variable is not set.
+`BASE_URL` is required for the suite to run reliably. Set it explicitly in `.env` before executing Playwright tests.
 
 ## Running the suite
 
@@ -45,7 +45,9 @@ Run a specific project:
 npx playwright test --project=guest
 npx playwright test --project=auth
 npx playwright test --project=borrower
+npx playwright test --project=officer
 npx playwright test --project=developer
+npx playwright test --project=integration
 ```
 
 Run a single file:
@@ -82,12 +84,25 @@ npm run typecheck
 
 The suite is organized by user type and lifecycle:
 
-- `guest/`: anonymous browsing behaviors
-- `auth/`: login, registration, password reset, redirection
-- `borrower/`: borrower dashboard, upload, and analysis flows
-- `developer/`: secured API checks and developer portal behavior
-- `integration/`: business-logic scenarios for calculators
+- `guest/`: anonymous browsing behaviors, public UI checks, and navigation smoke tests
+- `auth/`: login, registration, password reset, and redirect validation
+- `borrower/`: borrower dashboard, upload, analysis flows, and borrower navigation checks
+- `officer/`: officer role checks and underwriter/portfolio coverage
+- `developer/`: secured API checks, developer portal behavior, and developer navigation checks
+- `integration/`: business-logic scenarios for calculators and formula validation
 - `setup/`: reusable role-state generation
+
+Current navigation-focused specs include:
+
+- `tests/guest/navigation.spec.ts`
+- `tests/borrower/nav.spec.ts`
+- `tests/officer/nav.spec.ts`
+- `tests/developer/nav.spec.ts`
+
+Current formula-focused specs include:
+
+- `tests/integration/calculations.spec.ts`
+- `tests/integration/calculators.spec.ts`
 
 ## Important runtime behaviors
 

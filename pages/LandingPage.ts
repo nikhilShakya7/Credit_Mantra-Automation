@@ -20,6 +20,21 @@ export class LandingPage extends BasePage {
     await this.page.goto('/');
   }
 
+  async clickNavItem(label: string) {
+    await this.page.evaluate((targetLabel) => {
+      const item = Array.from(document.querySelectorAll('.sidebar-nav .nav-item')).find(
+        (node) => node.textContent?.toLowerCase().includes(targetLabel.toLowerCase())
+      ) as HTMLElement | undefined;
+
+      if (!item) {
+        throw new Error(`Navigation item not found: ${targetLabel}`);
+      }
+
+      item.scrollIntoView({ block: 'center', inline: 'center' });
+      item.click();
+    }, label);
+  }
+
   async expectAnonymousNavPresent() {
     await expect(this.navItems).toHaveCount(6);
     await expect(this.navItems.filter({ hasText: 'Landing Page' })).toBeVisible();

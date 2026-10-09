@@ -10,7 +10,34 @@ import { Page, APIRequestContext, APIResponse, expect } from '@playwright/test';
  */
 
 const RATE_LIMIT_HEADING = 'Too Many Requests';
-const DEFAULT_DEADLINE_MS = 60_000;
+const DEFAULT_DEADLINE_MS = 180_000;
+
+function parseRetryAfterMs(body: string, headers: Record<string, string | undefined> = {}): number {
+  const headerValue = headers['retry-after'] ?? headers['Retry-After'];
+  if (headerValue) {
+    const numeric = Number(headerValue);
+    if (!Number.isNaN(numeric)) return Math.max(numeric * 1000, 0);
+
+    const dateMs = Date.parse(headerValue);
+    if (!Number.isNaN(dateMs)) return Math.max(dateMs - Date.now(), 0);
+  }
+
+  const patterns = [
+    /Please wait\s+(?:<strong>)?\s*(\d+)\s*(?:second|sec|seconds|secs)/i,
+    /retry after\s+(\d+)\s*(?:second|sec|seconds|secs)/i,
+    /try again in\s+(\d+)\s*(?:second|sec|seconds|secs)/i,
+  ];
+
+  for (const match of patterns) {
+    const value = body.match(match)?.[1];
+    if (value) {
+      const seconds = Number(value);
+      if (!Number.isNaN(seconds)) return Math.max(seconds * 1000, 0);
+    }
+  }
+
+  return 10_000;
+}
 
 export function rateLimitBanner(page: Page) {
   return page.getByRole('heading', { name: RATE_LIMIT_HEADING });
@@ -33,8 +60,10 @@ export async function isRateLimited(page: Page): Promise<boolean> {
 export async function waitOutRateLimit(page: Page, deadline = Date.now() + DEFAULT_DEADLINE_MS): Promise<void> {
   while ((await isRateLimited(page)) && Date.now() < deadline) {
     const body = await page.locator('body').innerText().catch(() => '');
-    const match = body.match(/Please wait\s+(\d+)\s+second/i);
-    const waitMs = Math.min(match ? Number(match[1]) * 1000 : 10_000, Math.max(deadline - Date.now(), 0));
+    const waitMs = Math.min(
+      parseRetryAfterMs(body),
+      Math.max(deadline - Date.now(), 0),
+    );
     if (waitMs <= 0) break;
     await page.waitForTimeout(waitMs);
     await page.goto(page.url()).catch(() => undefined);
@@ -112,8 +141,10 @@ export async function postAuthForm(
     if (res.status() !== 429) return res;
 
     const body = await res.text().catch(() => '');
-    const match = body.match(/Please wait\s*(?:<strong>)?\s*(\d+)/i);
-    const waitMs = Math.min(match ? Number(match[1]) * 1000 : 10_000, Math.max(deadline - Date.now(), 0));
+    const waitMs = Math.min(
+      parseRetryAfterMs(body, res.headers()),
+      Math.max(deadline - Date.now(), 0),
+    );
     if (waitMs <= 0) return res;
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }

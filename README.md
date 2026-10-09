@@ -6,9 +6,10 @@ Production-ready end-to-end suite covering every role, page, and API contract ob
 | -------------------- | -------------------------------------------------------------------- |
 | **Framework**        | Playwright `^1.64.0` + TypeScript `^7.0.2`                           |
 | **Design**           | Page Object Model + role-scoped projects + shared fixtures/test-data |
-| **Test files**       | 7                                                                    |
-| **Total test cases** | 44 (40 unique + 4 mobile re-runs)                                    |
-| **Last result**      | ✅ 40 passed / 0 failed (`npx playwright test`)                      |
+| **Test files** | 7 |
+| **Total test cases** | 42 (38 unique + 4 mobile re-runs) |
+| **Logins per run** | **0** when a valid saved session exists (at most 1 per role on a cold cache) |
+| **Last result** | ✅ 42 passed / 0 failed in 33s (`npx playwright test`) |
 
 ---
 
@@ -38,16 +39,16 @@ Verified against the live application sidebar navigation (`/` → `.sidebar-nav 
 
 | #   | Playwright Project | Spec file                               | Auth                   | Cases | Focus                                          |
 | --- | ------------------ | --------------------------------------- | ---------------------- | :---: | ---------------------------------------------- |
-| 1   | `setup`            | `tests/setup/auth.setup.ts`             | performs login         |   3   | Builds reusable `storageState` for each role   |
-| 2   | `guest`            | `tests/guest/public-ui.spec.ts`         | anonymous              |   4   | Public UI, theme, calculators smoke            |
-| 3   | `auth`             | `tests/auth/auth-flows.spec.ts`         | anonymous              |   9   | Login, register, forgot password, route guards |
-| 4   | `borrower`         | `tests/borrower/borrower-flows.spec.ts` | `.auth/borrower.json`  |   8   | Analyzer, SME, assistant, RBAC denials         |
-| 5   | `officer`          | `tests/officer/officer-flows.spec.ts`   | `.auth/officer.json`   |   4   | Underwriter, portfolio, RBAC denials           |
-| 6   | `developer`        | `tests/developer/api-portal.spec.ts`    | `.auth/developer.json` |   9   | API portal + REST API contract                 |
-| 7   | `integration`      | `tests/integration/calculators.spec.ts` | anonymous              |   3   | Calculator boundary/edge-case behavior         |
-| 8   | `mobile-chromium`  | `tests/guest/public-ui.spec.ts`         | anonymous              |   4   | Same guest suite on Pixel 7 (Pixel 7 viewport) |
+| 1 | `setup` | `tests/setup/auth.setup.ts` | logins once (or reuses session) | 3 | Builds/reuses reusable `storageState` per role |
+| 2 | `guest` | `tests/guest/public-ui.spec.ts` | anonymous | 4 | Public UI, theme, calculators smoke |
+| 3 | `auth` | `tests/auth/auth-flows.spec.ts` | anonymous | 7 | Login, register, forgot password, route guards |
+| 4 | `borrower` | `tests/borrower/borrower-flows.spec.ts` | `.auth/borrower.json` | 8 | Analyzer, SME, assistant, RBAC denials |
+| 5 | `officer` | `tests/officer/officer-flows.spec.ts` | `.auth/officer.json` | 4 | Underwriter, portfolio, RBAC denials |
+| 6 | `developer` | `tests/developer/api-portal.spec.ts` | `.auth/developer.json` | 9 | API portal + REST API contract |
+| 7 | `integration` | `tests/integration/calculators.spec.ts` | anonymous | 3 | Calculator boundary/edge-case behavior |
+| 8 | `mobile-chromium` | `tests/guest/public-ui.spec.ts` | anonymous | 4 | Same guest suite on Pixel 7 (Pixel 7 viewport) |
 
-> Projects 4–7 depend on `setup`, so all logins happen **once per run** and every subsequent test reuses the cookie jar. This is essential: the application rate-limits `/auth/*` per IP (see §8).
+> **Login happens exactly once.** Every role project depends on `setup` and loads the saved cookie jar, so **no test ever performs a login**. `setup` itself first checks whether `.auth/<role>.json` still passes a protected-page probe and, if so, **skips the login entirely**. On a warm cache a full run performs **0 logins**; only an expired/absent session or `FORCE_LOGIN=1` triggers a single login for that role. This keeps the suite under the app's per-IP `/auth/*` throttle (see §8).
 
 ---
 
@@ -55,13 +56,13 @@ Verified against the live application sidebar navigation (`/` → `.sidebar-nav 
 
 ### 3.1 `setup` — Session Bootstrap (3 cases)
 
-Authenticates each role once and writes the browser storage state to `.auth/`. These are not assertions about the app; they are prerequisites.
+Authenticates each role **at most once** and writes the browser storage state to `.auth/`. On subsequent runs, if the saved session still passes a protected-page probe, the login is skipped. Not assertions about the app; prerequisites. Force a re-login with `FORCE_LOGIN=1`.
 
-| ID     | Test             | Steps                                                                       | Output                 |
-| ------ | ---------------- | --------------------------------------------------------------------------- | ---------------------- |
-| SET-01 | `borrower auth`  | Visit `/auth/login/`, submit borrower credentials, wait for redirect to `/` | `.auth/borrower.json`  |
-| SET-02 | `officer auth`   | Same flow with credit officer credentials                                   | `.auth/officer.json`   |
-| SET-03 | `developer auth` | Same flow with developer credentials                                        | `.auth/developer.json` |
+| ID     | Test                | Steps                                                              | Output                 |
+| ------ | ------------------- | ----------------------------------------------------------------- | ---------------------- |
+| SET-01 | `borrower session`  | Probe `/sme/dashboard/`; if the saved state is invalid, log in once | `.auth/borrower.json`  |
+| SET-02 | `officer session`   | Probe `/underwriter/dashboard/`; log in once if invalid            | `.auth/officer.json`   |
+| SET-03 | `developer session` | Probe `/api/portal/`; log in once if invalid                       | `.auth/developer.json` |
 
 ---
 
@@ -76,19 +77,19 @@ Authenticates each role once and writes the browser storage state to `.auth/`. T
 
 ---
 
-### 3.3 Guest — Auth & Route Guards (`auth`, 9 cases)
+### 3.3 Guest — Auth & Route Guards (`auth`, 7 cases)
 
-| ID     | Test                                                         | Steps & Assertions                                                                                                                                                 |
-| ------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| AUT-01 | Invalid credentials show error                               | `/auth/login/` → submit `notfound.e2e@example.com` / `WrongPass123!` → `.messages-container` contains `Invalid email or password.`                                 |
-| AUT-02 | Register empty submit blocked by HTML5 validation            | `/auth/register/` → click **Create Account** with empty fields → `#id_email.validationMessage` is non-empty (client-side constraint, no POST issued)               |
-| AUT-03 | Register password mismatch                                   | Fill valid email/password/confirm-mismatch + accept terms → submit → `.messages-container` contains `Passwords do not match`                                       |
-| AUT-04 | Forgot password non-existent email redirects to verify       | `/auth/forgot-password/` → submit a random `@example.com` address → **302 → `/auth/forgot-password/verify/`** (the app does not reveal whether the account exists) |
-| AUT-05 | Unauthenticated user redirected to login for protected pages | `page.goto()` each of `/analyzer/upload/`, `/sme/dashboard/`, `/api/portal/` → final URL equals `/auth/login/?next=<original path>` for each                       |
-| AUT-06 | Assistant loads for guests                                   | `/assistant/` → card title visible → `#chat_input` visible → `#send_btn` visible; guest banner shows **General Knowledge Mode**                                    |
-| AUT-07 | Developer portal redirects to login when anonymous           | `/api/portal/` → URL matches `/auth/login/`                                                                                                                        |
-| AUT-08 | Underwriter requires login                                   | `/underwriter/dashboard/` → URL matches `/auth/login/`                                                                                                             |
-| AUT-09 | Portfolio requires login                                     | `/portfolio/dashboard/` → URL matches `/auth/login/`                                                                                                               |
+| ID     | Test                                                              | Steps & Assertions                                                                                                                                                                    |
+| ------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AUT-01 | Invalid credentials show error                                    | `/auth/login/` → submit `notfound.e2e@example.com` / `WrongPass123!` (form POST with the rendered CSRF token) → response **200** with body containing `Invalid email or password.`      |
+| AUT-02 | Register empty submit blocked by HTML5 validation                 | `/auth/register/` → click **Create Account** with empty fields → `#id_email.validationMessage` is non-empty (client-side constraint, no POST issued)                                  |
+| AUT-03 | Register password mismatch                                        | Fill valid email/password/confirm-mismatch + accept terms → submit → `.messages-container` contains `Passwords do not match`                                                          |
+| AUT-04 | Forgot password non-existent email redirects to verify            | `/auth/forgot-password/` → submit a random `@example.com` address → **302** with `Location: /auth/forgot-password/verify/` (the app never reveals whether the account exists)          |
+| AUT-05 | Unauthenticated user redirected to login for protected pages      | `GET` (no redirect follow) `/analyzer/upload/`, `/sme/dashboard/`, `/api/portal/` → each returns **302** with `Location: /auth/login/?next=<original path>`                           |
+| AUT-06 | Assistant loads for guests                                        | `/assistant/` → card title visible → `#chat_input` visible → `#send_btn` visible; guest banner shows **General Knowledge Mode**                                                       |
+| AUT-07 | Protected role pages require login when anonymous                 | `GET` (no redirect follow) `/api/portal/`, `/underwriter/dashboard/`, `/portfolio/dashboard/` → each returns **302** with `Location: /auth/login/?next=<original path>`               |
+
+> AUT-01, AUT-04, AUT-05 and AUT-07 assert the raw HTTP response (CSRF-bearing form POST / redirect headers) instead of following the redirect chain. The protected paths in AUT-05/AUT-07 are not under `/auth/*`, so those tests consume **no** auth-throttle budget.
 
 ---
 
@@ -346,10 +347,14 @@ npx playwright test -g "Access Denied"
 ### Expected output
 
 ```
-  40 passed (≈ 2–3 min)
+  [auth.setup] reusing saved borrower session (no login)
+  [auth.setup] reusing saved officer session (no login)
+  [auth.setup] reusing saved developer session (no login)
+  ...
+  42 passed (≈ 30–60s with a warm session cache)
 ```
 
-(`mobile-chromium` adds 4 more when selected.)
+On a cold cache the first run performs one login per role (~3 logins) and takes longer. `mobile-chromium` adds 4 more cases when selected.
 
 ### Artifacts on failure
 
@@ -435,7 +440,7 @@ Store all credentials as **GitHub Actions secrets** — nothing secret lives in 
 ## 11. Conventions Used
 
 1. **POM** — every spec calls page objects; raw selectors live only in `pages/`.
-2. **Role-scoped projects** — the correct `storageState` is injected by the project, not by `beforeEach` re-logins (which would burn the rate-limit budget).
+2. **Login once, reuse everywhere** — `setup` logs in at most once per role and caches `.auth/<role>.json`; every role project injects that state. No spec logs in, and a warm cache performs **zero** logins (`FORCE_LOGIN=1` to override). This avoids `beforeEach` re-logins and the rate-limiter blowups they caused.
 3. **Accessible selectors first** — `getByRole` / `getByLabel` / `getByPlaceholder` / `getByTestId` preferred; `#id` only for app-exposed widget internals that were verified in the DOM.
 4. **No fake selectors** — every locator in this suite was confirmed against the live app.
 5. **No stray `waitForTimeout()`** — only `utils/rate-limit.ts` uses it, with an explanatory comment.

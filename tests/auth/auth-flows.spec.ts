@@ -2,24 +2,15 @@ import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../pages/LoginPage';
 import { RegisterPage } from '../../pages/RegisterPage';
 import { ForgotPasswordPage } from '../../pages/ForgotPasswordPage';
-import { UploadPage } from '../../pages/UploadPage';
 import { AssistantPage } from '../../pages/AssistantPage';
-import { DeveloperPortalPage } from '../../pages/DeveloperPortalPage';
 import { invalidUsers, registration } from '../../test-data/users';
-import { rateLimitBanner } from '../../utils/rate-limit';
 
 test.describe('Guest: Auth flows', () => {
   test('Invalid credentials show error', async ({ page }) => {
     const login = new LoginPage(page);
-    await login.gotoLogin();
-    await login.fillCredentials(invalidUsers.notFound.email, invalidUsers.notFound.password);
-    await login.submit();
-    await page.waitForLoadState('networkidle');
-    if (await rateLimitBanner(page).isVisible().catch(() => false)) {
-      await expect(login.heading).toBeVisible();
-      return;
-    }
-    await login.expectInvalid();
+    const res = await login.submitInvalidCredentials(invalidUsers.notFound.email, invalidUsers.notFound.password);
+    expect(res.status()).toBe(200);
+    expect(await res.text()).toContain('Invalid email or password.');
   });
 
   test('Register empty submit blocked by HTML5 validation', async ({ page }) => {
@@ -56,13 +47,14 @@ test.describe('Guest: Auth flows', () => {
   });
 
   test('Unauthenticated user redirected to login for protected pages', async ({ page }) => {
-    const upload = new UploadPage(page);
-    await page.goto('/analyzer/upload/');
-    await expect(page).toHaveURL(/\/auth\/login\/\?next=\/analyzer\/upload\//);
-    await page.goto('/sme/dashboard/');
-    await expect(page).toHaveURL(/\/auth\/login\/\?next=\/sme\/dashboard\//);
-    await page.goto('/api/portal/');
-    await expect(page).toHaveURL(/\/auth\/login\/\?next=\/api\/portal\//);
+    // `maxRedirects: 0` asserts the 302 + Location header directly. The protected
+    // paths are not under /auth/*, so this test costs ZERO auth-throttle budget.
+    const protectedPaths = ['/analyzer/upload/', '/sme/dashboard/', '/api/portal/'];
+    for (const path of protectedPaths) {
+      const res = await page.request.get(path, { maxRedirects: 0, failOnStatusCode: false });
+      expect(res.status()).toBe(302);
+      expect(res.headers()['location']).toBe(`/auth/login/?next=${path}`);
+    }
   });
 
   test('Assistant loads for guests', async ({ page }) => {
@@ -73,19 +65,11 @@ test.describe('Guest: Auth flows', () => {
     await expect(asst.sendBtn).toBeVisible();
   });
 
-  test('Developer portal redirects to login when anonymous', async ({ page }) => {
-    const dev = new DeveloperPortalPage(page);
-    await dev.gotoPortal();
-    await expect(page).toHaveURL(/\/auth\/login/);
-  });
-
-  test('Underwriter requires login', async ({ page }) => {
-    await page.goto('/underwriter/dashboard/');
-    await expect(page).toHaveURL(/\/auth\/login/);
-  });
-
-  test('Portfolio requires login', async ({ page }) => {
-    await page.goto('/portfolio/dashboard/');
-    await expect(page).toHaveURL(/\/auth\/login/);
+  test('Developer portal / Underwriter / Portfolio require login when anonymous', async ({ page }) => {
+    for (const path of ['/api/portal/', '/underwriter/dashboard/', '/portfolio/dashboard/']) {
+      const res = await page.request.get(path, { maxRedirects: 0, failOnStatusCode: false });
+      expect(res.status()).toBe(302);
+      expect(res.headers()['location']).toBe(`/auth/login/?next=${path}`);
+    }
   });
 });

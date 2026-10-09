@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page, APIRequestContext, APIResponse, expect } from '@playwright/test';
 
 /**
  * The application throttles everything under /auth/* per client IP.
@@ -88,4 +88,33 @@ export async function performAuthFlow(
 /** Assertion helper: the current page is not showing the throttle screen. */
 export async function expectNotRateLimited(page: Page): Promise<void> {
   await expect(rateLimitBanner(page)).toBeHidden();
+}
+
+/**
+ * Submits an /auth/* form through the API request context (no browser redirect
+ * chain) and retries only when the server answers 429. Avoids the extra GETs a
+ * real navigation would add, which is important on a per-IP throttle.
+ */
+export async function postAuthForm(
+  request: APIRequestContext,
+  url: string,
+  form: Record<string, string>,
+  headers: Record<string, string> = {},
+  deadline = Date.now() + DEFAULT_DEADLINE_MS
+): Promise<APIResponse> {
+  for (;;) {
+    const res = await request.post(url, {
+      form,
+      headers,
+      maxRedirects: 0,
+      failOnStatusCode: false,
+    });
+    if (res.status() !== 429) return res;
+
+    const body = await res.text().catch(() => '');
+    const match = body.match(/Please wait\s*(?:<strong>)?\s*(\d+)/i);
+    const waitMs = Math.min(match ? Number(match[1]) * 1000 : 10_000, Math.max(deadline - Date.now(), 0));
+    if (waitMs <= 0) return res;
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+  }
 }

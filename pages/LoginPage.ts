@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
-import { performAuthFlow, gotoAuth, rateLimitBanner } from '../utils/rate-limit';
+import { performAuthFlow, gotoAuth, postAuthForm, rateLimitBanner } from '../utils/rate-limit';
 
 export class LoginPage extends BasePage {
   readonly email = this.page.locator('#id_email');
@@ -49,6 +49,22 @@ export class LoginPage extends BasePage {
   async expectInvalid() {
     await expect(this.invalidMsg).toBeVisible();
     await expect(this.invalidMsg).toContainText(/Invalid email or password|Invalid/i);
+  }
+
+  /**
+   * Submits credentials expected to fail via the API request context (CSRF taken
+   * from the rendered form) and returns the raw response. Login failures are a
+   * 200 re-render, so no redirect chain - and only two /auth/* requests.
+   */
+  async submitInvalidCredentials(email: string, password: string) {
+    await gotoAuth(this.page, '/auth/login/');
+    const csrf = await this.page.locator('input[name=csrfmiddlewaretoken]').inputValue();
+    return postAuthForm(
+      this.page.request,
+      '/auth/login/',
+      { csrfmiddlewaretoken: csrf, email, password },
+      { Referer: this.page.url() }
+    );
   }
 
   async expectRateLimitedBanner() {

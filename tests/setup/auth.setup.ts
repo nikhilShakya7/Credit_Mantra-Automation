@@ -1,6 +1,6 @@
 import { test as setup, expect } from "@playwright/test";
 import { Browser } from "@playwright/test";
-import { LoginPage } from "../../pages/LoginPage";
+import { LoginPage } from "../../pages/auth/LoginPage";
 import { storageState, STORAGE_STATE_DIR, roleProbeUrl, Role } from "../../utils/storage-state";
 import { users } from "../../test-data/users";
 import fs from "fs/promises";

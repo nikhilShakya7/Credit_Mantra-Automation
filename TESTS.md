@@ -82,6 +82,7 @@ End-to-end, API contract, and role-based regression for https://credit-mantra.co
 
 ## Design Notes
 - POM with role-based pages
+- Page objects are grouped under `pages/` by workflow: `common/`, `public/`, `auth/`, `borrower/`, `officer/`, `developer/`, and `shared/`
 - `setup` project (runs first, serial) builds/reuses `storageState` per role — one login only
 - rate-limit resilience (429 detection + waitOutRateLimit) — the only sanctioned `waitForTimeout()`
 - auth assertions use raw request responses (CSRF form POST / redirect headers) to avoid extra `/auth/*` calls

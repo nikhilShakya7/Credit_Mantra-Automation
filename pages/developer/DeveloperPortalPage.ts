@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
-import { BasePage } from './BasePage';
-import { env } from '../utils/env';
+import { BasePage } from '../common/BasePage';
+import { env } from '../../utils/env';
 
 export class DeveloperPortalPage extends BasePage {
   readonly cards = this.page.locator('.card-title');

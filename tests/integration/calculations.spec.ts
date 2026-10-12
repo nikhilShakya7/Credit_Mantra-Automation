@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { CalculatorsPage } from '../../pages/CalculatorsPage';
+import { CalculatorsPage } from '../../pages/public/CalculatorsPage';
 import { emiMonthly, emiTotalInterest, npr, salaryTax } from '../../utils/finance';
 
 /**

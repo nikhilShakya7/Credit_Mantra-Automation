@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { LandingPage } from '../../pages/LandingPage';
-import { CalculatorsPage } from '../../pages/CalculatorsPage';
+import { LandingPage } from '../../pages/public/LandingPage';
+import { CalculatorsPage } from '../../pages/public/CalculatorsPage';
 
 test.describe('Guest: Landing & Public UI', () => {
   test('Landing page renders correctly', async ({ page }) => {

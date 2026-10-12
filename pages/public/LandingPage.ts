@@ -1,5 +1,5 @@
 import { Page, expect } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { BasePage } from '../common/BasePage';
 
 export class LandingPage extends BasePage {
   readonly title = () => this.page.title();

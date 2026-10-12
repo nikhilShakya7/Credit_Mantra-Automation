@@ -1,5 +1,5 @@
 import { Page, expect } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { BasePage } from '../common/BasePage';
 
 export class CalculatorsPage extends BasePage {
   readonly tabEmi = this.page.getByRole('button', { name: /EMI Calculator/i });

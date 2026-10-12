@@ -1,5 +1,5 @@
 import { Page, expect } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { BasePage } from "../common/BasePage";
 
 export class UploadPage extends BasePage {
   readonly dropZone = this.page.locator("#drop_zone");

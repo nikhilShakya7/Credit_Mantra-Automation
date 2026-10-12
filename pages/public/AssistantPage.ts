@@ -1,5 +1,5 @@
 import { Page, expect } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { BasePage } from "../common/BasePage";
 
 export class AssistantPage extends BasePage {
   readonly heading = this.page.locator(".card-title").first();

@@ -211,21 +211,28 @@ credit-mantra automation/
 │   ├── architecture.md
 │   ├── testing-guide.md
 │   └── test-conditions.md
-├── pages/                        # Page Object Model (14 objects)
-│   ├── BasePage.ts               # shared goto / theme toggle / logout
-│   ├── LandingPage.ts            # nav-per-role assertions, theme persistence
-│   ├── LoginPage.ts              # rate-limit-aware login
-│   ├── RegisterPage.ts           # field validation + messages + OTP redirect
-│   ├── ForgotPasswordPage.ts     # reset request + verify redirect
-│   ├── UploadPage.ts             # drop zone, demo forms, unsupported file
-│   ├── ResultsPage.ts            # extraction-complete metrics + underwriter link
-│   ├── SmePage.ts                # tabs, DSCR metric, statement selector
-│   ├── UnderwriterPage.ts        # engine heading + history table
-│   ├── PortfolioPage.ts          # metric labels/values + risk chart
-│   ├── DeveloperPortalPage.ts    # cards + runtime API-key extraction
-│   ├── AssistantPage.ts          # chat input/log + banner state
-│   ├── CalculatorsPage.ts        # EMI/DTI/TAX/Salary inputs & outputs
-│   └── ForbiddenPage.ts          # shared 403 "Access Denied" helper
+├── pages/                        # Page Object Model (14 objects grouped by workflow)
+│   ├── common/
+│   │   └── BasePage.ts           # shared navigation and page actions
+│   ├── public/
+│   │   ├── LandingPage.ts        # nav-per-role assertions, theme persistence
+│   │   ├── CalculatorsPage.ts    # EMI/DTI/TAX/Salary inputs & outputs
+│   │   └── AssistantPage.ts      # chat input/log + banner state
+│   ├── auth/
+│   │   ├── LoginPage.ts          # rate-limit-aware login
+│   │   ├── RegisterPage.ts       # field validation + messages + OTP redirect
+│   │   └── ForgotPasswordPage.ts # reset request + verify redirect
+│   ├── borrower/
+│   │   ├── UploadPage.ts         # drop zone, demo forms, unsupported file
+│   │   ├── ResultsPage.ts        # extraction-complete metrics + underwriter link
+│   │   └── SmePage.ts            # tabs, DSCR metric, statement selector
+│   ├── officer/
+│   │   ├── UnderwriterPage.ts    # engine heading + history table
+│   │   └── PortfolioPage.ts      # metric labels/values + risk chart
+│   ├── developer/
+│   │   └── DeveloperPortalPage.ts # cards + runtime API-key extraction
+│   └── shared/
+│       └── ForbiddenPage.ts      # shared 403 "Access Denied" helper
 ├── fixtures/
 │   └── auth.fixture.ts           # optional asBorrower/asOfficer/asDeveloper fixtures
 ├── test-data/
@@ -458,7 +465,7 @@ Store all credentials as **GitHub Actions secrets** — nothing secret lives in 
 
 ## 11. Conventions Used
 
-1. **POM** — every spec calls page objects; raw selectors live only in `pages/`.
+1. **POM** — every spec calls page objects; raw selectors live only in the workflow-grouped `pages/` subfolders.
 2. **Login once, reuse everywhere** — `setup` logs in at most once per role and caches `.auth/<role>.json`; every role project injects that state. No spec logs in, and a warm cache performs **zero** logins (`FORCE_LOGIN=1` to override). This avoids `beforeEach` re-logins and the rate-limiter blowups they caused.
 3. **Accessible selectors first** — `getByRole` / `getByLabel` / `getByPlaceholder` / `getByTestId` preferred; `#id` only for app-exposed widget internals that were verified in the DOM.
 4. **No fake selectors** — every locator in this suite was confirmed against the live app.

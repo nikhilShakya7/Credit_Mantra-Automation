@@ -133,11 +133,12 @@ This is a reliable way to confirm authorization behavior in a live app.
 When adding a new test, prefer these patterns:
 
 1. Put the test in the correct role-specific suite
-2. Reuse an existing page object class when possible
+2. Reuse an existing page object class when possible; page objects are grouped by workflow under `pages/` (`public/`, `auth/`, `borrower/`, `officer/`, `developer/`, and `shared/`)
 3. Keep selectors inside page objects, not directly in test files
-4. Use role-based and text-based assertions where practical
-5. Handle auth throttling with existing helper utilities
-6. Add test data to the appropriate fixture file rather than embedding literals in the spec
+4. Do not create duplicate page objects for the same screen by role; share the page object and keep role-specific assertions in tests
+5. Use role-based and text-based assertions where practical
+6. Handle auth throttling with existing helper utilities
+7. Add test data to the appropriate fixture file rather than embedding literals in the spec
 
 ## Troubleshooting
 

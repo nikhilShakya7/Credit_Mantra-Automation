@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { CalculatorsPage } from '../../pages/CalculatorsPage';
+import { CalculatorsPage } from '../../pages/public/CalculatorsPage';
 import { dti } from '../../utils/finance';
 
 test.describe('Integration: Calculators behavior', () => {

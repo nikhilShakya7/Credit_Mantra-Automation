@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { LandingPage } from "../../pages/LandingPage";
-import { UploadPage } from "../../pages/UploadPage";
-import { ResultsPage } from "../../pages/ResultsPage";
-import { SmePage } from "../../pages/SmePage";
-import { AssistantPage } from "../../pages/AssistantPage";
+import { LandingPage } from "../../pages/public/LandingPage";
+import { UploadPage } from "../../pages/borrower/UploadPage";
+import { ResultsPage } from "../../pages/borrower/ResultsPage";
+import { SmePage } from "../../pages/borrower/SmePage";
+import { AssistantPage } from "../../pages/public/AssistantPage";
 import { storageState } from "../../utils/storage-state";
 
 test.describe("Borrower: Dashboard & Statement flows", () => {

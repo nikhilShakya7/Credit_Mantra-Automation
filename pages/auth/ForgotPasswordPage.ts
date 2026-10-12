@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
-import { BasePage } from './BasePage';
-import { gotoAuth, postAuthForm } from '../utils/rate-limit';
+import { BasePage } from '../common/BasePage';
+import { gotoAuth, postAuthForm } from '../../utils/rate-limit';
 
 export class ForgotPasswordPage extends BasePage {
   readonly email = this.page.locator('#email');

@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../../pages/LoginPage';
-import { RegisterPage } from '../../pages/RegisterPage';
-import { ForgotPasswordPage } from '../../pages/ForgotPasswordPage';
-import { AssistantPage } from '../../pages/AssistantPage';
+import { LoginPage } from '../../pages/auth/LoginPage';
+import { RegisterPage } from '../../pages/auth/RegisterPage';
+import { ForgotPasswordPage } from '../../pages/auth/ForgotPasswordPage';
+import { AssistantPage } from '../../pages/public/AssistantPage';
 import { invalidUsers, registration } from '../../test-data/users';
 
 test.describe('Guest: Auth flows', () => {

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { LandingPage } from '../../pages/LandingPage';
-import { UnderwriterPage } from '../../pages/UnderwriterPage';
-import { PortfolioPage } from '../../pages/PortfolioPage';
+import { LandingPage } from '../../pages/public/LandingPage';
+import { UnderwriterPage } from '../../pages/officer/UnderwriterPage';
+import { PortfolioPage } from '../../pages/officer/PortfolioPage';
 
 test.describe('Credit Officer: Underwriter & Portfolio', () => {
   test('Officer landing has underwriter/portfolio nav', async ({ page }) => {

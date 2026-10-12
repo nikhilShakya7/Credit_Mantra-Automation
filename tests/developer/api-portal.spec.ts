@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { LandingPage } from '../../pages/LandingPage';
-import { DeveloperPortalPage } from '../../pages/DeveloperPortalPage';
+import { LandingPage } from '../../pages/public/LandingPage';
+import { DeveloperPortalPage } from '../../pages/developer/DeveloperPortalPage';
 import { apiPayloads } from '../../test-data/api-payloads';
 import { storageState } from '../../utils/storage-state';
 

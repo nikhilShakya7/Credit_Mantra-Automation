@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { LandingPage } from '../../pages/LandingPage';
+import { LandingPage } from '../../pages/public/LandingPage';
 import { storageState } from '../../utils/storage-state';
 
 test.describe('Navigation: developer', () => {

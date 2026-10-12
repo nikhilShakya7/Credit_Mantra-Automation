@@ -1,5 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
-import { LandingPage } from "../../pages/LandingPage";
+import { LandingPage } from "../../pages/public/LandingPage";
 
 async function expectRoute(page: Page, landing: LandingPage, label: string, urlPattern: RegExp) {
   await landing.gotoLanding();

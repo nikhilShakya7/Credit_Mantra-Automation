@@ -30,15 +30,27 @@ This pattern avoids repeated login overhead and keeps tests stable when the app 
 
 ### `pages/`
 
-Each page class encapsulates selectors and common interactions for a screen or feature area.
+Each page class encapsulates selectors and interactions for a screen or feature area. Classes
+are grouped by audience or workflow:
+
+```text
+pages/
+  common/      shared page foundations
+  public/      landing, calculators, and assistant
+  auth/        login, registration, and password reset
+  borrower/    upload, results, and SME dashboard
+  officer/     underwriter and portfolio dashboards
+  developer/   developer API portal
+  shared/      shared screens such as access denied
+```
 
 Examples:
 
-- `LoginPage`: login form and auth expectations
-- `RegisterPage`: account creation validation and mismatch states
-- `UploadPage`: file upload and demo analysis actions
-- `CalculatorsPage`: calculator inputs, tabs, and assertions
-- `DeveloperPortalPage`: API key and developer dashboard behavior
+- `pages/auth/LoginPage.ts`: login form and auth expectations
+- `pages/borrower/UploadPage.ts`: file upload and demo analysis actions
+- `pages/public/CalculatorsPage.ts`: calculator inputs, tabs, and assertions
+- `pages/developer/DeveloperPortalPage.ts`: API key and developer dashboard behavior
+- `pages/common/BasePage.ts`: shared page foundation
 
 ### `tests/`
 

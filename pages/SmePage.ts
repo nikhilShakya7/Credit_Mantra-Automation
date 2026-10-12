@@ -2,7 +2,7 @@ import { Page, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class SmePage extends BasePage {
-  readonly heading = this.page.locator('h3').first();
+  readonly heading = this.page.getByRole('heading', { level: 3 });
   readonly statementSelector = this.page.locator('#statement-selector');
   readonly tabAnalysis = this.page.locator('#tabBtn-analysis');
   readonly tabHistory = this.page.locator('#tabBtn-history');

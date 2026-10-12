@@ -6,10 +6,10 @@ export class LoginPage extends BasePage {
   readonly email = this.page.locator('#id_email');
   readonly password = this.page.locator('#id_password');
   readonly loginButton = this.page.getByRole('button', { name: 'Log In', exact: true });
-  readonly forgotLink = this.page.getByRole('link', { name: /Forgot Password/i }).first();
+  readonly forgotLink = this.page.getByRole('link', { name: /Forgot Password/i });
   readonly invalidMsg = this.page.locator('.messages-container').first();
   readonly errorBanner = this.page.locator('.alert, .error, .form-error').first();
-  readonly heading = this.page.getByRole('heading', { name: /Sign In to Credit Mantra/i }).first();
+  readonly heading = this.page.getByRole('heading', { name: /Sign In to Credit Mantra/i });
   readonly title = () => this.page.title();
 
   constructor(page: Page) {

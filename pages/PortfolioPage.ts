@@ -5,7 +5,7 @@ export class PortfolioPage extends BasePage {
   readonly metricLabels = this.page.locator('.metric-label');
   readonly metricValues = this.page.locator('.metric-value');
   readonly riskChart = this.page.locator('#riskCategoryChart');
-  readonly heading = this.page.locator('h3').first();
+  readonly heading = this.page.getByRole('heading', { level: 3 });
 
   constructor(page: Page) {
     super(page);

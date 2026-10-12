@@ -2,11 +2,11 @@ import { Page, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class ResultsPage extends BasePage {
-  readonly heading = this.page.locator('h3').first();
+  readonly heading = this.page.getByRole('heading', { level: 3 });
   readonly underwriterLink = this.page.getByRole('link', { name: /Run Credit Underwriter/i });
   readonly metricBoxes = this.page.locator('.metric-box, .stat-box');
   readonly expenseChart = this.page.locator('#expenseChart');
-  readonly riskPanel = this.page.locator('.risk-panel, [class*="risk"]');
+  readonly riskPanel = this.page.locator('.risk-panel');
   readonly topAction = this.page.locator('.glass-card').first();
   readonly pageTitle = () => this.page.title();
 

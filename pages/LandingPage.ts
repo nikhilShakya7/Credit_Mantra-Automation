@@ -3,14 +3,17 @@ import { BasePage } from './BasePage';
 
 export class LandingPage extends BasePage {
   readonly title = () => this.page.title();
-  readonly h1 = this.page.locator('h1').first();
+  readonly h1 = this.page.getByRole('heading', { level: 1 });
   readonly heroCta1 = this.page.getByRole('link', { name: 'Analyze Bank Statement' });
   readonly heroCta2 = this.page.getByRole('link', { name: 'Use Calculators' });
   readonly navItems = this.page.locator('.sidebar-nav .nav-item');
-  readonly themeToggle = this.page.getByTitle('Toggle Theme');
-  readonly loginBtnTop = this.page.getByRole('link', { name: 'Log In' }).first();
-  readonly signupBtnTop = this.page.getByRole('link', { name: 'Sign Up' }).first();
-  readonly userMenuName = this.page.locator('.user-menu-name').first();
+  readonly mobileMenuToggle = this.page.getByRole('button', { name: '☰' });
+  readonly themeToggle = this.page
+    .getByRole('button', { name: /toggle theme/i })
+    .or(this.page.getByTitle(/toggle theme/i));
+  readonly loginBtnTop = this.page.getByRole('link', { name: 'Log In', exact: true });
+  readonly signupBtnTop = this.page.getByRole('link', { name: 'Sign Up', exact: true });
+  readonly userMenuName = this.page.locator('.user-menu-name');
 
   constructor(page: Page) {
     super(page);
@@ -21,18 +24,11 @@ export class LandingPage extends BasePage {
   }
 
   async clickNavItem(label: string) {
-    await this.page.evaluate((targetLabel) => {
-      const item = Array.from(document.querySelectorAll('.sidebar-nav .nav-item')).find(
-        (node) => node.textContent?.toLowerCase().includes(targetLabel.toLowerCase())
-      ) as HTMLElement | undefined;
-
-      if (!item) {
-        throw new Error(`Navigation item not found: ${targetLabel}`);
-      }
-
-      item.scrollIntoView({ block: 'center', inline: 'center' });
-      item.click();
-    }, label);
+    const viewport = this.page.viewportSize();
+    if (viewport && viewport.width <= 768) {
+      await this.mobileMenuToggle.click();
+    }
+    await this.navItems.filter({ hasText: label }).click();
   }
 
   async expectAnonymousNavPresent() {

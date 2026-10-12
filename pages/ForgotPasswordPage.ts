@@ -6,7 +6,7 @@ export class ForgotPasswordPage extends BasePage {
   readonly email = this.page.locator('#email');
   readonly submit = this.page.getByRole('button', { name: /Reset Password|Send Reset/i });
   readonly messages = this.page.locator('.messages-container').first();
-  readonly heading = this.page.getByRole('heading', { name: /Forgot Password|Reset your password/i }).first();
+  readonly heading = this.page.getByRole('heading', { name: /Forgot Password|Reset your password/i });
   readonly csrf = this.page.locator('input[name=csrfmiddlewaretoken]');
 
   /** Result of the last reset request, captured without following the redirect chain. */

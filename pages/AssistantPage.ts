@@ -7,7 +7,7 @@ export class AssistantPage extends BasePage {
   readonly sendBtn = this.page.locator("#send_btn");
   readonly chatLog = this.page.locator("#chat_log");
   readonly suggestions = this.page
-    .locator("button")
+    .getByRole("button")
     .filter({
       hasText:
         /My Credit Profile|Improve|Loan Capacity|DTI Ratio|Top Expenses|Cashflow|Risk Flags/i,

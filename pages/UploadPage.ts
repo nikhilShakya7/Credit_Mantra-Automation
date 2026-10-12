@@ -8,18 +8,15 @@ export class UploadPage extends BasePage {
   readonly fileList = this.page.locator("#file_list_container");
   readonly messages = this.page.locator(".messages-container").first();
   readonly cardTitles = this.page.locator(".card-title");
-  readonly demoSalaried = this.page
-    .locator("form")
-    .filter({ hasText: "Salaried Professional" })
-    .locator("button[type=submit]");
-  readonly demoSme = this.page
-    .locator("form")
-    .filter({ hasText: "SME Cashflow Profile" })
-    .locator("button[type=submit]");
-  readonly demoHighRisk = this.page
-    .locator("form")
-    .filter({ hasText: "High Risk Profile" })
-    .locator("button[type=submit]");
+  readonly demoSalaried = this.page.getByRole("button").filter({
+    hasText: "Salaried Professional",
+  });
+  readonly demoSme = this.page.getByRole("button").filter({
+    hasText: "SME Cashflow Profile",
+  });
+  readonly demoHighRisk = this.page.getByRole("button").filter({
+    hasText: "High Risk Profile",
+  });
   readonly yourAnalyzedHeading = this.page
     .getByRole("heading", { name: "Upload Bank Statements" })
     .first();
